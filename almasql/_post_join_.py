@@ -51,7 +51,10 @@ async def post_join[LI: object, RI: object, K: typing.Any](
     for source_item in _source_:
         fkey = _equal_(source_item)
         source_map[fkey] = source_item
-        setattr(source_item, _attribute_, default)
+        if many:
+            setattr(source_item, _attribute_, list())
+        else:
+            setattr(source_item, _attribute_, default)
 
     source_fkeys = set(source_map.keys())
     for right_item in await _from_(source_fkeys):
@@ -66,9 +69,6 @@ async def post_join[LI: object, RI: object, K: typing.Any](
             continue
 
         nested_items = getattr(source_item, _attribute_)
-        if nested_items is Unset:
-            nested_items = []
-            setattr(source_item, _attribute_, nested_items)
         nested_items.append(right_item)
 
     if default is Unset:
