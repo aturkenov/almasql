@@ -65,8 +65,8 @@ async def post_join[LI: object, RI: object, K: typing.Any](
             setattr(source_item, _attribute_, right_item)
             continue
 
-        nested_items = getattr(source_item, _attribute_, None)
-        if nested_items is None:
+        nested_items = getattr(source_item, _attribute_)
+        if nested_items is Unset:
             nested_items = []
             setattr(source_item, _attribute_, nested_items)
         nested_items.append(right_item)
