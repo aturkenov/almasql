@@ -47,38 +47,24 @@ async def post_join[LI: object, RI: object, K: typing.Any](
         print(f'book {b.name} published by {list_of_authors}')
     ```
     """
-    source_map = {}
-    for source_item in _source_:
-        fkey = _equal_(source_item)
-        source_map[fkey] = source_item
-        if many:
-            setattr(source_item, _attribute_, list())
-        else:
-            setattr(source_item, _attribute_, default)
-
-    source_fkeys = set(source_map.keys())
-    for right_item in await _from_(source_fkeys):
-        fkey = _where_(right_item)
-
-        source_item = source_map.get(fkey)
-        if source_item is None:
+    source_map = {_equal_(i): i for i in _source_}
+    target_pks = set(source_map.keys())
+    target_map = {_where_(i): i for i in await _from_(target_pks)}
+    for target_pk, source_item in source_map.items():
+        target_item = target_map.get(target_pk)
+        if target_item is None:
+            if default is Unset:
+                _source_.remove(source_item)
+            else:
+                setattr(source_item, _attribute_, default)
             continue
 
         if not many:
-            setattr(source_item, _attribute_, right_item)
+            setattr(source_item, _attribute_, target_item)
             continue
 
-        nested_items = getattr(source_item, _attribute_)
-        nested_items.append(right_item)
-
-    if default is Unset:
-        n = len(_source_)
-        i = 0
-        while n > i:
-            source_item = _source_[i]
-            nested_items = getattr(source_item, _attribute_)
-            if nested_items is Unset:
-                n -= 1
-                _source_.pop(i)
-            else:
-                i += 1
+        nested_items = getattr(source_item, _attribute_, None)
+        if nested_items is None:
+            nested_items = list()
+            setattr(source_item, _attribute_, nested_items)
+        nested_items.append(target_item)
