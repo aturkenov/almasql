@@ -48,9 +48,9 @@ def unpack(x: typing.Iterable[str]) -> str:
 
 @custom_directive
 def set_values(x: typing.Mapping) -> str:
-    return "SET " + _separator.join([f'{_(k)} = {_(v)}' for k, v in x.items()])
+    return "SET " + _separator.join([f'{k} = {_(v)}' for k, v in x.items()])
 
 
 @custom_directive
 def unpack_values(x: typing.Mapping) -> str:
-    return f"{unpack(x.keys())} VALUES {unpack(x.values())}"
+    return f"{_separator.join(x)} VALUES {unpack(x.values())}"
