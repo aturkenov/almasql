@@ -53,4 +53,4 @@ def set_values(x: typing.Mapping) -> str:
 
 @custom_directive
 def unpack_values(x: typing.Mapping) -> str:
-    return f"{_separator.join(x)} VALUES {unpack(x.values())}"
+    return f"({_separator.join(x)}) VALUES {unpack(x.values())}"
