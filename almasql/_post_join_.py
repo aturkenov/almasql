@@ -1,3 +1,4 @@
+import asyncio
 import typing
 
 
@@ -6,18 +7,20 @@ Unset = ...
 
 async def post_join[LI: object, RI: object, K: typing.Any](
     _attribute_: str,
-    _from_: typing.Callable[[set[K]], typing.Coroutine[typing.Any, typing.Any, typing.Iterable[RI]]],
+    _from_: typing.Iterable[RI]
+    | typing.Callable[[set[K]], typing.Iterable[RI]]
+    | typing.Callable[[set[K]], typing.Awaitable[typing.Iterable[RI]]],
     _where_: typing.Callable[[RI], K],
     _equal_: typing.Callable[[LI], K],
-    _source_: list[LI],
+    left: list[LI],
     /,
-    many = False,
-    default = Unset,
+    many=False,
+    default=Unset,
 ) -> None:
     """
     Joins list of subrecords from function to list of record by `_attribute_`.
     Group subrecords if many is True.
-    Excludes record from `source` if subrecord not found and `default` is unset.
+    Excludes record from `left` if subrecord not found and `default` is unset.
 
     ```python
     class Author:
@@ -47,24 +50,32 @@ async def post_join[LI: object, RI: object, K: typing.Any](
         print(f'book {b.name} published by {list_of_authors}')
     ```
     """
-    source_map = {_equal_(i): i for i in _source_}
-    target_pks = set(source_map.keys())
-    target_map = {_where_(i): i for i in await _from_(target_pks)}
-    for target_pk, source_item in source_map.items():
-        target_item = target_map.get(target_pk)
-        if target_item is None:
-            if default is Unset:
-                _source_.remove(source_item)
-            else:
-                setattr(source_item, _attribute_, default)
-            continue
+    left_map = {_equal_(i): i for i in left}
 
-        if not many:
-            setattr(source_item, _attribute_, target_item)
-            continue
+    if callable(_from_):
+        pks = set(left_map.keys())
+        if asyncio.iscoroutinefunction(_from_):
+            right = await _from_(pks)
+        else:
+            right = await asyncio.to_thread(_from_, pks)
+    else:
+        right = _from_
 
-        nested_items = getattr(source_item, _attribute_, None)
-        if nested_items is None:
-            nested_items = list()
-            setattr(source_item, _attribute_, nested_items)
-        nested_items.append(target_item)
+    right_map = {}
+    for i in right:  # type: ignore
+        pk = _where_(i)
+        if many:
+            subitems = right_map.get(pk)
+            if subitems is None:
+                subitems = []
+                right_map[pk] = subitems
+            subitems.append(i)
+        else:
+            right_map[pk] = i
+
+    for pk, left_item in left_map.items():
+        right_item = right_map.get(pk, default)
+        if right_item is Unset:
+            left.remove(left_item)
+            continue
+        setattr(left_item, _attribute_, right_item)
