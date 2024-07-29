@@ -75,7 +75,7 @@ class active_transaction:
 @asynccontextmanager
 async def _make_transaction(
     engine: sqla_engine,
-) -> typing.AsyncGenerator[active_transaction]:
+) -> typing.AsyncGenerator[active_transaction, None]:
     """
     Begin a new transaction.
     """
@@ -90,7 +90,7 @@ async def new_transaction(
     *,
     use_last: bool = True,
     pretransaction_factory = _make_transaction
-) -> typing.AsyncGenerator[active_transaction]:
+) -> typing.AsyncGenerator[active_transaction, None]:
     pretransaction = pretransaction_factory(engine)
     async with _transactions_chain_.add(
         pretransaction=pretransaction,
