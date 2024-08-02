@@ -1,4 +1,3 @@
-import asyncio
 import typing
 
 
@@ -8,7 +7,6 @@ Unset = ...
 async def post_join[LI: object, RI: object, K: typing.Any](
     _attribute_: str,
     _from_: typing.Iterable[RI]
-    | typing.Callable[[set[K]], typing.Iterable[RI]]
     | typing.Callable[[set[K]], typing.Awaitable[typing.Iterable[RI]]],
     _where_: typing.Callable[[RI], K],
     _equal_: typing.Callable[[LI], K],
@@ -54,10 +52,7 @@ async def post_join[LI: object, RI: object, K: typing.Any](
 
     if callable(_from_):
         pks = set(left_map.keys())
-        if asyncio.iscoroutinefunction(_from_):
-            right = await _from_(pks)
-        else:
-            right = await asyncio.to_thread(_from_, pks)
+        right = await _from_(pks)
     else:
         right = _from_
 
