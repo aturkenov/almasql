@@ -9,11 +9,11 @@ async def post_join[LI: object, RI: object, K: typing.Any](
     _from_: typing.Iterable[RI]
     | typing.Callable[[set[K]], typing.Awaitable[typing.Iterable[RI]]],
     _where_: typing.Callable[[RI], K],
-    _equal_: typing.Callable[[LI], K],
+    _equal_: typing.Callable[[LI], K | None],
     left: list[LI],
     /,
-    many=False,
-    default=Unset,
+    many: bool = False,
+    default: typing.Any = Unset,
 ) -> None:
     """
     Joins list of subrecords from function to list of record by `_attribute_`.
@@ -48,7 +48,12 @@ async def post_join[LI: object, RI: object, K: typing.Any](
         print(f'book {b.name} published by {list_of_authors}')
     ```
     """
-    left_map = {_equal_(i): i for i in left}
+    left_map = {}
+    for i in left:
+        pk = _equal_(i)
+        if pk is None:
+            continue
+        left_map[pk] = i
 
     if callable(_from_):
         pks = set(left_map.keys())
